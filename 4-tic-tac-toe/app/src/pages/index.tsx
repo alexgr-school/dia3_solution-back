@@ -1,10 +1,13 @@
-import Image from 'next/image';
 import { Inter } from 'next/font/google';
 import { useState } from 'react';
 
+import Cell from '@/components/Cell';
+import PlayerSelectedCells from '@/components/PlayerSelectedCells';
+import exp from 'constants';
+
 const inter = Inter({ subsets: ['latin'] });
 
-export default function Home() {
+const Home = () => {
     const [player1SelectedCells, setPlayer1SelectedCells] = useState<number[]>(
         []
     );
@@ -15,6 +18,7 @@ export default function Home() {
     const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
 
     const handleCellClick = (index: number) => {
+        if (winner !== null) return;
         if (
             player1SelectedCells.includes(index) ||
             player2SelectedCells.includes(index)
@@ -28,85 +32,94 @@ export default function Home() {
             setPlayer2SelectedCells((prev) => [...prev, index]);
             setIsPlayer1Turn(true);
         }
+
+        if (player1SelectedCells.length + player2SelectedCells.length >= 63) {
+            setWinner(-1);
+            return;
+        }
     };
 
     return (
         <main
-            className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
+            className={`flex min-h-screen flex-col items-center justify-between p-10 lg:p-24 ${inter.className}`}
         >
-            <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-                <p className="fixed left-0 top-0 flex w-full justify-center border-b font-bold border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-                    Tic Tac Toe
-                </p>
-            </div>
+            <div></div>
 
-            <div className="flex gap-10">
-                <div className="grid grid-cols-8 gap-2 bg-gray-600 p-2 rounded-xl">
-                    {Array.from({ length: 64 }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="relative w-12 h-12 bg-white flex items-center justify-center border border-gray-200 rounded-lg dark:border-neutral-800/30 dark:bg-neutral-800/30"
-                            onClick={() => handleCellClick(index)}
-                        >
-                            {player1SelectedCells.includes(index) && (
-                                <>
-                                    <div className="h-8 w-1 bg-red-500 absolute transform -rotate-45 rounded"></div>
-                                    <div className="h-8 w-1 bg-red-500 absolute transform rotate-45 rounded"></div>
-                                </>
-                            )}
-                            {player2SelectedCells.includes(index) && (
-                                <div className="w-8 h-8 border-4 border-blue-500 rounded-full"></div>
-                            )}
+            <div className="flex flex-col items-center lg:flex-row lg:item justify-center gap-10 lg:gap-20 w-screen">
+                {/* Game Info */}
+                <div className="flex flex-col items-center lg:items-end gap-5 lg:gap-10">
+                    <div className="flex flex-col items-end gap-2">
+                        <h1 className="text-4xl font-bold">Tic Tac Toe</h1>
+                        <p className="text-mg">
+                            Click on the grid to select a cell.
+                        </p>
+                    </div>
+
+                    <div className="flex lg:flex-col items-end gap-10">
+                        <div className="flex flex-col items-end gap-1">
+                            <h2 className="text-lg font-bold">Turn</h2>
+                            <p>{isPlayer1Turn ? 'Player 1' : 'Player 2'}</p>
                         </div>
+
+                        <div className="flex flex-col items-end gap-1">
+                            <h2 className="text-lg font-bold">Winner</h2>
+                            <p>
+                                {winner === null
+                                    ? 'No winner yet'
+                                    : winner === -1
+                                    ? 'Draw'
+                                    : `Player ${winner}`}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <button
+                            className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                            onClick={() => {
+                                setPlayer1SelectedCells([]);
+                                setPlayer2SelectedCells([]);
+                                setWinner(null);
+                                setIsPlayer1Turn(true);
+                            }}
+                        >
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                {/* Tic Tac Toe Grid */}
+                <div className="grid grid-cols-8 w-fit h-fit gap-2 bg-gray-300 dark:bg-gray-800 p-2 rounded-xl">
+                    {Array.from({ length: 64 }).map((_, index) => (
+                        <Cell
+                            key={index}
+                            index={index}
+                            player1SelectedCells={player1SelectedCells}
+                            player2SelectedCells={player2SelectedCells}
+                            handleCellClick={handleCellClick}
+                        />
                     ))}
                 </div>
 
-                <div className="flex gap-5">
-                    <div>
-                        <h2 className="text-mg font-bold mb-2">Player 1</h2>
-                        <div className="relative w-12 h-12 bg-white flex items-center justify-center border mb-5 border-gray-200 rounded-lg dark:border-neutral-800/30 dark:bg-neutral-800/30">
-                            <div className="h-8 w-1 bg-red-500 absolute transform -rotate-45 rounded"></div>
-                            <div className="h-8 w-1 bg-red-500 absolute transform rotate-45 rounded"></div>
-                        </div>
-                        <ul>
-                            {player1SelectedCells.map((cell) => (
-                                <li key={cell}>{cell}</li>
-                            ))}
-                        </ul>
-                    </div>
-                    <div>
-                        <h2 className="text-mg font-bold mb-2">Player 2</h2>
-                        <div className="relative w-12 h-12 bg-white flex items-center justify-center border mb-5 border-gray-200 rounded-lg dark:border-neutral-800/30 dark:bg-neutral-800/30">
-                            <div className="w-8 h-8 border-4 border-blue-500 rounded-full"></div>
-                        </div>
-                        <ul>
-                            {player2SelectedCells.map((cell) => (
-                                <li key={cell}>{cell}</li>
-                            ))}
-                        </ul>
+                {/* Selected Cells */}
+                <div className="flex flex-col gap-5">
+                    <h2 className="text-lg font-bold">Selected Cells</h2>
+                    <div className="flex gap-10">
+                        <PlayerSelectedCells
+                            player="player1"
+                            selectedCells={player1SelectedCells}
+                        />
+                        <PlayerSelectedCells
+                            player="player2"
+                            selectedCells={player2SelectedCells}
+                        />
                     </div>
                 </div>
             </div>
 
-            <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-                <a
-                    href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-                    className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    <h2 className={`mb-3 text-2xl font-semibold`}>
-                        Docs{' '}
-                        <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-                            -&gt;
-                        </span>
-                    </h2>
-                    <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-                        Find in-depth information about Next.js features and
-                        API.
-                    </p>
-                </a>
-            </div>
+            <div></div>
         </main>
     );
-}
+};
+
+export default Home;
