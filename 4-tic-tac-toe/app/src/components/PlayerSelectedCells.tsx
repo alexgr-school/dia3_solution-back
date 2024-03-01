@@ -20,7 +20,7 @@ const PlayerSelectedCells = ({
                 {player === 'player1' ? <RedCross /> : <BlueCircle />}
             </div>
             {/* <ul className="flex flex-col flex-wrap gap-1 max-h-80"> */}
-            <ul className="grid grid-cols-10 lg:grid-cols-4 grid-rows-4 lg:grid-rows-10 grid-flow-row lg:grid-flow-col gap-1">
+            <ul className="grid grid-cols-10 xl:grid-cols-4 grid-rows-4 xl:grid-rows-10 grid-flow-row xl:grid-flow-col gap-1">
                 {selectedCells.length === 0 && (
                     <li className="w-6 h-6">No cells selected</li>
                 )}

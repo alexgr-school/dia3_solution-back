@@ -39,15 +39,22 @@ const Home = () => {
         }
     };
 
+    const handleReset = () => {
+        setPlayer1SelectedCells([]);
+        setPlayer2SelectedCells([]);
+        setWinner(null);
+        setIsPlayer1Turn(true);
+    };
+
     return (
         <main
-            className={`flex min-h-screen flex-col items-center justify-between p-10 lg:p-24 ${inter.className}`}
+            className={`flex min-h-screen flex-col items-center justify-between p-10 xl:p-24 ${inter.className}`}
         >
             <div></div>
 
-            <div className="flex flex-col items-center lg:flex-row lg:item justify-center gap-10 lg:gap-20 w-screen">
+            <div className="flex flex-col items-center xl:flex-row xl:item justify-center gap-10 xl:gap-20 w-screen">
                 {/* Game Info */}
-                <div className="flex flex-col items-center lg:items-end gap-5 lg:gap-10">
+                <div className="flex flex-col items-center xl:items-end gap-5 xl:gap-10">
                     <div className="flex flex-col items-end gap-2">
                         <h1 className="text-4xl font-bold">Tic Tac Toe</h1>
                         <p className="text-mg">
@@ -55,7 +62,7 @@ const Home = () => {
                         </p>
                     </div>
 
-                    <div className="flex lg:flex-col items-end gap-10">
+                    <div className="flex xl:flex-col items-end gap-10">
                         <div className="flex flex-col items-end gap-1">
                             <h2 className="text-lg font-bold">Turn</h2>
                             <p>{isPlayer1Turn ? 'Player 1' : 'Player 2'}</p>
@@ -76,12 +83,7 @@ const Home = () => {
                     <div>
                         <button
                             className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                            onClick={() => {
-                                setPlayer1SelectedCells([]);
-                                setPlayer2SelectedCells([]);
-                                setWinner(null);
-                                setIsPlayer1Turn(true);
-                            }}
+                            onClick={() => handleReset()}
                         >
                             Reset
                         </button>
@@ -102,13 +104,14 @@ const Home = () => {
                 </div>
 
                 {/* Selected Cells */}
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col items-center gap-5">
                     <h2 className="text-lg font-bold">Selected Cells</h2>
-                    <div className="flex gap-10">
+                    <div className="flex items-center gap-10">
                         <PlayerSelectedCells
                             player="player1"
                             selectedCells={player1SelectedCells}
                         />
+                        <hr className="w-0.5 min-h-48 xl:min-h-80 bg-gray-900 rounded-3xl" />
                         <PlayerSelectedCells
                             player="player2"
                             selectedCells={player2SelectedCells}
