@@ -7,15 +7,15 @@ const api = axios.create({
     },
 });
 
-export interface BoardDataResponse {
+export interface GridDataResponse {
     message?: string;
     game_mode: 'pvp' | 'pve';
-    board: number[][];
+    grid: number[][];
     current_player: number;
-    winning_positions?: number[][];
+    winning_cells?: number[][];
     winner: number | null;
 }
-export const getBoard = () => api.get<BoardDataResponse>('/board');
+export const getGrid = () => api.get<GridDataResponse>('/grid');
 
 type SetModeDataResponse = {
     game_mode: 'pvp' | 'pve';
@@ -26,10 +26,10 @@ export const setMode = (mode: 'pvp' | 'pve') =>
 export interface MoveDataResponse {
     message?: string;
     game_mode: 'pvp' | 'pve';
-    board: number[][];
+    grid: number[][];
     current_player: number;
     winner: number | null;
-    winning_positions?: number[][];
+    winning_cells?: number[][];
     ai_move?: {
         row: number;
         col: number;
@@ -53,4 +53,4 @@ interface ResetDataResponse {
         message: string;
     };
 }
-export const resetBoard = () => api.post<ResetDataResponse>('/reset');
+export const resetGrid = () => api.post<ResetDataResponse>('/reset');

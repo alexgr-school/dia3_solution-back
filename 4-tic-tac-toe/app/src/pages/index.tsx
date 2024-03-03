@@ -2,11 +2,11 @@ import { Inter } from 'next/font/google';
 import { useEffect, useState } from 'react';
 
 import {
-    BoardDataResponse,
+    GridDataResponse,
     MoveDataResponse,
-    getBoard,
+    getGrid,
     makeMove,
-    resetBoard,
+    resetGrid,
     setMode,
 } from '@/api';
 import { Button } from '@/components/ui/button';
@@ -24,14 +24,15 @@ const Home = () => {
     const [player2SelectedCells, setPlayer2SelectedCells] = useState<number[]>(
         []
     );
-    const [isPvPGameMode, setIsPvPGameMode] = useState<boolean>(true);
+    const [isPvEGameMode, setIsPvEGameMode] = useState<boolean>(false);
     const [winner, setWinner] = useState<number | null>(null);
     const [winningPositions, setWinningPositions] = useState<number[]>([]);
     const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
     const [error, setError] = useState(null);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
-        getBoard().then((res) => syncBoard(res.data));
+        getGrid().then((res) => syncGrid(res.data));
     }, []);
 
     const handleCellClick = async (index: number) => {
@@ -42,8 +43,10 @@ const Home = () => {
         )
             return;
         try {
+            if (isPvEGameMode) setLoading(true);
             const data = await makeMove(index, isPlayer1Turn ? 1 : 2);
-            await syncBoard(data);
+            await syncGrid(data);
+            if (isPvEGameMode) setLoading(false);
             console.log(data);
         } catch (error) {
             console.error(error.response.data.error);
@@ -57,14 +60,14 @@ const Home = () => {
         setWinner(null);
         setIsPlayer1Turn(true);
         setWinningPositions([]);
-        await resetBoard();
+        await resetGrid();
     };
 
     const handleGameModeChange = async () => {
         try {
-            const newGameMode = isPvPGameMode ? 'pve' : 'pvp';
+            const newGameMode = isPvEGameMode ? 'pvp' : 'pve';
             await setMode(newGameMode);
-            setIsPvPGameMode(!isPvPGameMode);
+            setIsPvEGameMode(!isPvEGameMode);
             await handleReset();
         } catch (error) {
             console.error(error.response.data.error);
@@ -72,13 +75,13 @@ const Home = () => {
         }
     };
 
-    const syncBoard = async (data: BoardDataResponse | MoveDataResponse) => {
-        const board = data.board;
+    const syncGrid = async (data: GridDataResponse | MoveDataResponse) => {
+        const grid = data.grid;
         const player1Cells: number[] = [];
         const player2Cells: number[] = [];
         const localWinningPositions: number[] = [];
 
-        board.forEach((row: number[], rowIndex: number) => {
+        grid.forEach((row: number[], rowIndex: number) => {
             row.forEach((cell: number, cellIndex: number) => {
                 if (cell === 1) {
                     player1Cells.push(rowIndex * 8 + cellIndex);
@@ -86,7 +89,7 @@ const Home = () => {
                     player2Cells.push(rowIndex * 8 + cellIndex);
                 }
                 if (
-                    data.winning_positions?.some(
+                    data.winning_cells?.some(
                         (pos) => pos[0] === rowIndex && pos[1] === cellIndex
                     ) &&
                     data.winner != 0
@@ -96,7 +99,7 @@ const Home = () => {
             });
         });
 
-        setIsPvPGameMode(data.game_mode === 'pvp');
+        if (data.game_mode) setIsPvEGameMode(data.game_mode === 'pve');
         setPlayer1SelectedCells(player1Cells);
         setPlayer2SelectedCells(player2Cells);
         setWinner(data.winner);
@@ -144,7 +147,7 @@ const Home = () => {
                     </div>
 
                     <GameModeSwitch
-                        checked={!isPvPGameMode}
+                        checked={isPvEGameMode}
                         onChange={handleGameModeChange}
                     />
 
@@ -152,10 +155,23 @@ const Home = () => {
                     {winner && (
                         <AlertModal
                             title="Winner"
-                            message={winner === 0 ? 'Draw' : `Player ${winner}`}
+                            message={
+                                winner === 0
+                                    ? 'Draw'
+                                    : isPvEGameMode && winner === 2
+                                    ? `AI has won!`
+                                    : `Player ${winner}`
+                            }
                             actionText="Reset"
                             actionFunction={handleReset}
                         />
+                    )}
+
+                    {loading && (
+                        <div className="flex items-center gap-2">
+                            <p>Loading...</p>
+                            <div className="w-5 h-5 border-t-2 border-b-2 border-blue-500 rounded-full animate-spin"></div>
+                        </div>
                     )}
                 </div>
 

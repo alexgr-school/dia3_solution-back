@@ -26,7 +26,7 @@ const PlayerSelectedCells = ({
                 )}
                 {selectedCells.map((cell) => (
                     <li className="w-6 h-6 text-right" key={cell}>
-                        {cell}
+                        {cell + 1}
                     </li>
                 ))}
             </ul>
