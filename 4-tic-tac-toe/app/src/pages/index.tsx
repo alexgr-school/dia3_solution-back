@@ -1,11 +1,19 @@
 import { Inter } from 'next/font/google';
 import { useEffect, useState } from 'react';
 
-import { BoardDataResponse, getBoard, makeMove, resetBoard } from '@/api';
+import {
+    BoardDataResponse,
+    MoveDataResponse,
+    getBoard,
+    makeMove,
+    resetBoard,
+    setMode,
+} from '@/api';
 import { Button } from '@/components/ui/button';
 import Cell from '@/components/Cell';
 import PlayerSelectedCells from '@/components/PlayerSelectedCells';
 import AlertModal from '@/components/AlertModal';
+import GameModeSwitch from '@/components/GameModeSwitch';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -16,7 +24,9 @@ const Home = () => {
     const [player2SelectedCells, setPlayer2SelectedCells] = useState<number[]>(
         []
     );
+    const [isPvPGameMode, setIsPvPGameMode] = useState<boolean>(true);
     const [winner, setWinner] = useState<number | null>(null);
+    const [winningPositions, setWinningPositions] = useState<number[]>([]);
     const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
     const [error, setError] = useState(null);
 
@@ -46,13 +56,27 @@ const Home = () => {
         setPlayer2SelectedCells([]);
         setWinner(null);
         setIsPlayer1Turn(true);
+        setWinningPositions([]);
         await resetBoard();
     };
 
-    const syncBoard = async (data: BoardDataResponse) => {
+    const handleGameModeChange = async () => {
+        try {
+            const newGameMode = isPvPGameMode ? 'pve' : 'pvp';
+            await setMode(newGameMode);
+            setIsPvPGameMode(!isPvPGameMode);
+            await handleReset();
+        } catch (error) {
+            console.error(error.response.data.error);
+            setError(error.response.data.error);
+        }
+    };
+
+    const syncBoard = async (data: BoardDataResponse | MoveDataResponse) => {
         const board = data.board;
         const player1Cells: number[] = [];
         const player2Cells: number[] = [];
+        const localWinningPositions: number[] = [];
 
         board.forEach((row: number[], rowIndex: number) => {
             row.forEach((cell: number, cellIndex: number) => {
@@ -61,12 +85,22 @@ const Home = () => {
                 } else if (cell === 2) {
                     player2Cells.push(rowIndex * 8 + cellIndex);
                 }
+                if (
+                    data.winning_positions?.some(
+                        (pos) => pos[0] === rowIndex && pos[1] === cellIndex
+                    ) &&
+                    data.winner != 0
+                ) {
+                    localWinningPositions.push(rowIndex * 8 + cellIndex);
+                }
             });
         });
 
+        setIsPvPGameMode(data.game_mode === 'pvp');
         setPlayer1SelectedCells(player1Cells);
         setPlayer2SelectedCells(player2Cells);
         setWinner(data.winner);
+        setWinningPositions(localWinningPositions);
         setIsPlayer1Turn(data.current_player === 1);
         setError(null);
     };
@@ -108,6 +142,12 @@ const Home = () => {
                     <div>
                         <Button onClick={() => handleReset()}>Reset</Button>
                     </div>
+
+                    <GameModeSwitch
+                        checked={!isPvPGameMode}
+                        onChange={handleGameModeChange}
+                    />
+
                     {error && <AlertModal title="Error" message={error} />}
                     {winner && (
                         <AlertModal
@@ -125,6 +165,10 @@ const Home = () => {
                         <Cell
                             key={index}
                             index={index}
+                            winningCell={
+                                winningPositions.length > 0 &&
+                                winningPositions.includes(index)
+                            }
                             player1SelectedCells={player1SelectedCells}
                             player2SelectedCells={player2SelectedCells}
                             handleCellClick={handleCellClick}

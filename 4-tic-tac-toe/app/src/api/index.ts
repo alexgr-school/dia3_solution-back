@@ -9,17 +9,37 @@ const api = axios.create({
 
 export interface BoardDataResponse {
     message?: string;
+    game_mode: 'pvp' | 'pve';
     board: number[][];
     current_player: number;
+    winning_positions?: number[][];
     winner: number | null;
 }
 export const getBoard = () => api.get<BoardDataResponse>('/board');
 
+type SetModeDataResponse = {
+    game_mode: 'pvp' | 'pve';
+};
+export const setMode = (mode: 'pvp' | 'pve') =>
+    api.post<SetModeDataResponse>('/set_mode', { mode });
+
+export interface MoveDataResponse {
+    message?: string;
+    game_mode: 'pvp' | 'pve';
+    board: number[][];
+    current_player: number;
+    winner: number | null;
+    winning_positions?: number[][];
+    ai_move?: {
+        row: number;
+        col: number;
+    };
+}
 export const makeMove = async (
     cell: number,
     player: number
-): Promise<BoardDataResponse> => {
-    const response = await api.post<BoardDataResponse>('/move', {
+): Promise<MoveDataResponse> => {
+    const response = await api.post<MoveDataResponse>('/move', {
         row: Math.floor(cell / 8),
         col: cell % 8,
         player,
