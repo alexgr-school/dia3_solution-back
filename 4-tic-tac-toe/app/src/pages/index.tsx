@@ -1,11 +1,13 @@
 import { Inter } from 'next/font/google';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
+import { BoardDataResponse, getBoard, makeMove, resetBoard } from '@/api';
+import { Button } from '@/components/ui/button';
 import Cell from '@/components/Cell';
 import PlayerSelectedCells from '@/components/PlayerSelectedCells';
-import exp from 'constants';
+import AlertModal from '@/components/AlertModal';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
 const Home = () => {
     const [player1SelectedCells, setPlayer1SelectedCells] = useState<number[]>(
@@ -16,34 +18,57 @@ const Home = () => {
     );
     const [winner, setWinner] = useState<number | null>(null);
     const [isPlayer1Turn, setIsPlayer1Turn] = useState(true);
+    const [error, setError] = useState(null);
 
-    const handleCellClick = (index: number) => {
+    useEffect(() => {
+        getBoard().then((res) => syncBoard(res.data));
+    }, []);
+
+    const handleCellClick = async (index: number) => {
         if (winner !== null) return;
         if (
             player1SelectedCells.includes(index) ||
             player2SelectedCells.includes(index)
         )
             return;
-
-        if (isPlayer1Turn) {
-            setPlayer1SelectedCells((prev) => [...prev, index]);
-            setIsPlayer1Turn(false);
-        } else {
-            setPlayer2SelectedCells((prev) => [...prev, index]);
-            setIsPlayer1Turn(true);
-        }
-
-        if (player1SelectedCells.length + player2SelectedCells.length >= 63) {
-            setWinner(-1);
-            return;
+        try {
+            const data = await makeMove(index, isPlayer1Turn ? 1 : 2);
+            await syncBoard(data);
+            console.log(data);
+        } catch (error) {
+            console.error(error.response.data.error);
+            setError(error.response.data.error);
         }
     };
 
-    const handleReset = () => {
+    const handleReset = async () => {
         setPlayer1SelectedCells([]);
         setPlayer2SelectedCells([]);
         setWinner(null);
         setIsPlayer1Turn(true);
+        await resetBoard();
+    };
+
+    const syncBoard = async (data: BoardDataResponse) => {
+        const board = data.board;
+        const player1Cells: number[] = [];
+        const player2Cells: number[] = [];
+
+        board.forEach((row: number[], rowIndex: number) => {
+            row.forEach((cell: number, cellIndex: number) => {
+                if (cell === 1) {
+                    player1Cells.push(rowIndex * 8 + cellIndex);
+                } else if (cell === 2) {
+                    player2Cells.push(rowIndex * 8 + cellIndex);
+                }
+            });
+        });
+
+        setPlayer1SelectedCells(player1Cells);
+        setPlayer2SelectedCells(player2Cells);
+        setWinner(data.winner);
+        setIsPlayer1Turn(data.current_player === 1);
+        setError(null);
     };
 
     return (
@@ -73,7 +98,7 @@ const Home = () => {
                             <p>
                                 {winner === null
                                     ? 'No winner yet'
-                                    : winner === -1
+                                    : winner === 0
                                     ? 'Draw'
                                     : `Player ${winner}`}
                             </p>
@@ -81,13 +106,17 @@ const Home = () => {
                     </div>
 
                     <div>
-                        <button
-                            className="px-4 py-2 rounded-lg bg-gray-300 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
-                            onClick={() => handleReset()}
-                        >
-                            Reset
-                        </button>
+                        <Button onClick={() => handleReset()}>Reset</Button>
                     </div>
+                    {error && <AlertModal title="Error" message={error} />}
+                    {winner && (
+                        <AlertModal
+                            title="Winner"
+                            message={winner === 0 ? 'Draw' : `Player ${winner}`}
+                            actionText="Reset"
+                            actionFunction={handleReset}
+                        />
+                    )}
                 </div>
 
                 {/* Tic Tac Toe Grid */}

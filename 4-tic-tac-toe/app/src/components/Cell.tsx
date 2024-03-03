@@ -21,7 +21,7 @@ const Cell = ({
             onClick={() => handleCellClick(index)}
         >
             <div className="absolute text-gray-300 dark:text-gray-800 select-none">
-                {index}
+                {index + 1}
             </div>
             {player1SelectedCells.includes(index) && <RedCross />}
             {player2SelectedCells.includes(index) && <BlueCircle />}
